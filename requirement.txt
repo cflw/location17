@@ -1,0 +1,2 @@
+pymobiledevice3
+async-tkinter-loop
