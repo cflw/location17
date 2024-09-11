@@ -2,16 +2,17 @@ import tkinter as tk
 import tkinter.ttk as ttk
 import 窗口
 c默认名称 = "新地址"
-c默认经度 = "0"
-c默认纬度 = "0"
-def f验证小数(a值: str):
-	if a值:
+def F验证数值(a最小, a最大):
+	def f验证数值(a值: str):
 		try:
-			float(a值)
-			return True
-		except ValueError:
+			v值 = float(a值)
+			return a最小 <= v值 <= a最大
+		except Exception as e:
 			return False
-	return True	#可以空
+	return f验证数值
+f验证经度 = F验证数值(-180, 180)
+f验证纬度 = F验证数值(-90, 90)
+f验证偏移 = F验证数值(0, 99999)
 def f取字符串变量(a变量: tk.StringVar, a默认值: str):
 	v = a变量.get()
 	return v if v else a默认值
@@ -19,20 +20,22 @@ class W地址管理(tk.Toplevel):
 	def __init__(self, a父, a地址管理):
 		tk.Toplevel.__init__(self, a父, width = 400)
 		self.title("地址管理")
-		窗口.f窗口居中(self, 412, 611)
+		窗口.f窗口居中(self, 440, 642)
 		self.resizable(False, False)
 		#变量
 		self.m地址管理 = a地址管理
 		self.mi修改 = False
 		#表格
 		c表格行 = 0
-		self.w地址列表 = ttk.Treeview(self, show = "headings", columns = ("名称", "经度", "纬度"), height = 20)
+		self.w地址列表 = ttk.Treeview(self, show = "headings", columns = ("名称", "经度", "纬度", "偏移"), height = 20)
 		self.w地址列表.heading("名称", text = "名称")
 		self.w地址列表.heading("经度", text = "经度")
 		self.w地址列表.heading("纬度", text = "纬度")
-		self.w地址列表.column("名称", width = 200)
+		self.w地址列表.heading("偏移", text = "偏移")
+		self.w地址列表.column("名称", width = 150)
 		self.w地址列表.column("经度", width = 100)
 		self.w地址列表.column("纬度", width = 100)
+		self.w地址列表.column("偏移", width = 80)
 		self.w地址列表.bind("<<TreeviewSelect>>", self.f事件_表格选择)
 		self.w地址列表.grid(row = c表格行, rowspan = 1, column = 0, columnspan = 6, padx = 4, pady = 4)
 		self.f刷新地址列表()
@@ -42,26 +45,35 @@ class W地址管理(tk.Toplevel):
 		self.w上移.grid(row = c移动按钮行, rowspan = 1, column = 0, columnspan = 3, padx = 4, pady = 4)
 		self.w下移 = ttk.Button(self, text = "下移", command = self.f按钮_下移)
 		self.w下移.grid(row = c移动按钮行, rowspan = 1, column = 3, columnspan = 3, padx = 4, pady = 4)
-		#修改值
+		#修改名称
 		c名称行 = c移动按钮行 + 1
 		self.w名称标签 = ttk.Label(self, text = "名称：")
 		self.w名称标签.grid(row = c名称行, rowspan = 1, column = 0, columnspan = 1, padx = 4, pady = 4, sticky = "E")
 		self.m绑定名称 = tk.StringVar(value = c默认名称)
 		self.w名称 = ttk.Entry(self, textvariable = self.m绑定名称, width = 40)
 		self.w名称.grid(row = c名称行, rowspan = 1, column = 1, columnspan = 5, padx = 4, pady = 4, sticky = "EW")
+		#修改经纬度
 		c数值行 = c名称行 + 1
 		self.w经度标签 = ttk.Label(self, text = "经度：")
 		self.w经度标签.grid(row = c数值行, rowspan = 1, column = 0, columnspan = 1, padx = 4, pady = 4, sticky = "E")
-		self.m绑定经度 = tk.StringVar(value = c默认经度)
-		self.w经度 = ttk.Entry(self, textvariable = self.m绑定经度, width = 20, validate = "key", validatecommand = (self.register(f验证小数), "%P"))
+		self.m绑定经度 = tk.StringVar(value = "0")
+		self.w经度 = ttk.Entry(self, textvariable = self.m绑定经度, width = 20, validate = "key", validatecommand = (self.register(self.f事件_输入经度), "%P"))
 		self.w经度.grid(row = c数值行, rowspan = 1, column = 1, columnspan = 2, padx = 4, pady = 4, sticky = "EW")
 		self.w纬度标签 = ttk.Label(self, text = "纬度：")
-		self.w纬度标签.grid(row = c数值行, rowspan = 1, column = 3, columnspan = 1, padx = 4, pady = 4, sticky = "E")
-		self.m绑定纬度 = tk.StringVar(value = c默认纬度)
-		self.w纬度 = ttk.Entry(self, textvariable = self.m绑定纬度, width = 20, validate = "key", validatecommand = (self.register(f验证小数), "%P"))
-		self.w纬度.grid(row = c数值行, rowspan = 1, column = 4, columnspan = 2, padx = 4, pady = 4, sticky = "EW")
+		self.w纬度标签.grid(row = c数值行+1, rowspan = 1, column = 0, columnspan = 1, padx = 4, pady = 4, sticky = "E")
+		self.m绑定纬度 = tk.StringVar(value = "0")
+		self.w纬度 = ttk.Entry(self, textvariable = self.m绑定纬度, width = 20, validate = "key", validatecommand = (self.register(self.f事件_输入纬度), "%P"))
+		self.w纬度.grid(row = c数值行+1, rowspan = 1, column = 1, columnspan = 2, padx = 4, pady = 4, sticky = "EW")
+		#修改偏移
+		self.m绑定偏移 = tk.StringVar(value = "0")
+		self.w偏移标签 = ttk.Label(self, text = "偏移：")
+		self.w偏移标签.grid(row = c数值行, rowspan = 1, column = 3, columnspan = 1, padx = 4, pady = 4, sticky = "E")
+		self.w偏移 = ttk.Entry(self, textvariable = self.m绑定偏移, width = 20, validate = "key", validatecommand = (self.register(self.f事件_输入偏移), "%P"))
+		self.w偏移.grid(row = c数值行, rowspan = 1, column = 4, columnspan = 1, padx = 4, pady = 4, sticky = "EW")
+		self.w偏移标签2 = ttk.Label(self, text = "米")
+		self.w偏移标签2.grid(row = c数值行, rowspan = 1, column = 5, columnspan = 1, padx = 4, pady = 4, sticky = "W")
 		#操作按钮
-		c操作行 = c数值行 + 1
+		c操作行 = c数值行 + 2
 		self.w新增地址 = ttk.Button(self, text = "新增地址", command = self.f按钮_新增地址)
 		self.w新增地址.grid(row = c操作行, rowspan = 1, column = 0, columnspan = 2, padx = 4, pady = 4)
 		self.w修改地址 = ttk.Button(self, text = "修改地址", command = self.f按钮_修改地址)
@@ -88,6 +100,7 @@ class W地址管理(tk.Toplevel):
 		self.w地址列表.set(a项, 0, a值[0])
 		self.w地址列表.set(a项, 1, a值[1])
 		self.w地址列表.set(a项, 2, a值[2])
+		self.w地址列表.set(a项, 3, a值[3])
 	def f交换地址(self, a项1, a项2):
 		v值1 = self.f地址列表项取值(a项1)
 		v值2 = self.f地址列表项取值(a项2)
@@ -120,14 +133,15 @@ class W地址管理(tk.Toplevel):
 		self.w地址列表.selection_set(v交换项)
 		self.mi修改 = True
 	def f按钮_新增地址(self):
-		v名称 = f取字符串变量(self.m绑定名称, c默认名称)
-		v经度 = f取字符串变量(self.m绑定经度, c默认经度)
-		v纬度 = f取字符串变量(self.m绑定纬度, c默认纬度)
-		self.w地址列表.insert("", "end", values = (v名称, v经度, v纬度))
+		v名称 = f取字符串变量(self.m绑定名称, "0")
+		v经度 = f取字符串变量(self.m绑定经度, "0")
+		v纬度 = f取字符串变量(self.m绑定纬度, "0")
+		v偏移 = f取字符串变量(self.m绑定偏移, "0")
+		self.w地址列表.insert("", "end", values = (v名称, v经度, v纬度, v偏移))
 		self.mi修改 = True
 	def f按钮_修改地址(self):
 		v选择项 = self.w地址列表.selection()[0]
-		self.f地址列表项赋值(v选择项, (self.m绑定名称.get(), self.m绑定经度.get(), self.m绑定纬度.get()))
+		self.f地址列表项赋值(v选择项, (self.m绑定名称.get(), self.m绑定经度.get(), self.m绑定纬度.get(), self.m绑定偏移.get()))
 		self.mi修改 = True
 	def f按钮_删除地址(self):
 		v选择项 = self.w地址列表.selection()[0]
@@ -147,7 +161,33 @@ class W地址管理(tk.Toplevel):
 		va选择项 = w表格.selection()
 		if not va选择项:	#没有选择,出现于删除行时
 			return
-		v名称, v经度, v纬度 = w表格.item(va选择项[0], "values")
+		v名称, v经度, v纬度, v偏移 = w表格.item(va选择项[0], "values")
 		self.m绑定名称.set(v名称)
 		self.m绑定经度.set(v经度)
 		self.m绑定纬度.set(v纬度)
+		self.m绑定偏移.set(v偏移)
+	def f事件_输入经度(self, a值):	#验证经度并设置按钮状态
+		v经度有效 = f验证经度(a值)
+		self.w经度.state(["!invalid" if v经度有效 else "invalid"])
+		v纬度有效 = "invalid" not in self.w纬度.state()
+		v偏移有效 = "invalid" not in self.w偏移.state()
+		self.f启用修改按钮(v经度有效 and v纬度有效 and v偏移有效)
+		return True
+	def f事件_输入纬度(self, a值):	#验证经度并设置按钮状态
+		v纬度有效 = f验证纬度(a值)
+		self.w纬度.state(["!invalid" if v纬度有效 else "invalid"])
+		v经度有效 = "invalid" not in self.w经度.state()
+		v偏移有效 = "invalid" not in self.w偏移.state()
+		self.f启用修改按钮(v经度有效 and v纬度有效 and v偏移有效)
+		return True
+	def f事件_输入偏移(self, a值):	#验证经度并设置按钮状态
+		v偏移有效 = f验证偏移(a值)
+		self.w偏移.state(["!invalid" if v偏移有效 else "invalid"])
+		v经度有效 = "invalid" not in self.w经度.state()
+		v纬度有效 = "invalid" not in self.w纬度.state()
+		self.f启用修改按钮(v经度有效 and v纬度有效 and v偏移有效)
+		return True
+	def f启用修改按钮(self, a启用):
+		v状态 = ["!disabled" if a启用 else "disabled"]
+		self.w新增地址.state(v状态)
+		self.w修改地址.state(v状态)

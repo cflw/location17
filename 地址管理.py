@@ -1,21 +1,34 @@
 import os.path
 import xml.etree.ElementTree as et
 c地址文件 = "地址.xml"
+def f取节点值(a元素: et.Element, a标签名: str, a默认值 = None):
+	if (v节点 := a元素.find(a标签名)) != None:
+		return v节点.text
+	return a默认值
 class S地址:
-	def __init__(self, a名称: str, a经度: float, a纬度: float):
+	def __init__(self, a名称: str, a经度: float, a纬度: float, a偏移: float):
 		self.m名称 = str(a名称)
 		self.m经度 = float(a经度)
 		self.m纬度 = float(a纬度)
+		self.m偏移 = float(a偏移)
 	def ft元组(self):
-		return self.m名称, self.m经度, self.m纬度
+		return self.m名称, self.m经度, self.m纬度, self.m偏移
 	@staticmethod
 	def fc地址元素(a元素: et.Element):
-		return S地址(a元素.get("名称"), a元素.find("经度").text, a元素.find("纬度").text)
+		return S地址(
+			a元素.get("名称"), 
+			f取节点值(a元素, "经度", 0),
+			f取节点值(a元素, "纬度", 0),
+			f取节点值(a元素, "偏移", 0)
+		)
 	def ft地址元素(self):
 		v地址元素 = et.Element("地址", {"名称": self.m名称})
 		et.SubElement(v地址元素, "经度").text = str(self.m经度)
 		et.SubElement(v地址元素, "纬度").text = str(self.m纬度)
+		et.SubElement(v地址元素, "偏移", {"单位": "米"}).text = str(self.m偏移)
 		return v地址元素
+	def fg显示名称(self):
+		return f"{self.m名称} ({self.m经度}, {self.m纬度})"
 class C地址管理:
 	def __init__(self):
 		self.ma地址 = []
@@ -46,7 +59,7 @@ class C地址管理:
 		v树.write(a路径, encoding = "utf-8")
 	def fe地址名称(self):
 		for v地址 in self.ma地址:
-			yield v地址.m名称
+			yield v地址.fg显示名称()
 	def fe地址元组(self):
 		for v地址 in self.ma地址:
 			yield v地址.ft元组()
