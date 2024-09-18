@@ -1,18 +1,16 @@
-import ctypes
 import tkinter as tk
 import tkinter.ttk as ttk
 import async_tkinter_loop	#async-tkinter-loop
 import 窗口
 import 日志
 import 坐标
+from 窗口 import c间距
 class W主窗口(tk.Tk):
 	def __init__(self, a地址管理, a手机管理):
-		ctypes.windll.shcore.SetProcessDpiAwareness(1)
-		ScaleFactor = ctypes.windll.shcore.GetScaleFactorForDevice(0)
+		窗口.f开启高分屏适配()
 		tk.Tk.__init__(self)
-		self.tk.call("tk", "scaling", ScaleFactor / 75)
+		self.tk.call("tk", "scaling", 窗口.fg窗口缩放())
 		self.title("Location17")
-		窗口.f窗口居中(self, 306, 462)
 		self.resizable(False, False)
 		窗口.f初始化样式()
 		#变量
@@ -21,37 +19,33 @@ class W主窗口(tk.Tk):
 		self.m选择地址 = 0
 		self.m选择手机 = 0
 		#地址&手机
-		self.w地址框架 = ttk.LabelFrame(self, text = "虚拟定位",width = 400, height = 400)
-		self.w地址框架.grid(row = 0, rowspan = 1, column = 0, columnspan = 1, padx = 4, pady = 4)
+		self.w地址框架 = ttk.LabelFrame(self, text = "虚拟定位", width = 400, height = 400)
+		self.w地址框架.grid(row = 0, rowspan = 1, column = 0, columnspan = 1, padx = c间距, pady = c间距)
 		self.w地址标签 = ttk.Label(self.w地址框架, text = "地址：")
-		self.w地址标签.grid(row = 0, rowspan = 1, column = 0, columnspan = 1, padx = 4, pady = 4, sticky = "E")
+		self.w地址标签.grid(row = 0, rowspan = 1, column = 0, columnspan = 1, padx = c间距, pady = c间距, sticky = "E")
 		self.w地址 = ttk.Combobox(self.w地址框架, state = "readonly")
 		self.w地址.bind("<<ComboboxSelected>>", self.f事件_地址被选择)
-		self.w地址.grid(row = 0, rowspan = 1, column = 1, columnspan = 5, padx = 4, pady = 4, sticky = "EW")
+		self.w地址.grid(row = 0, rowspan = 1, column = 1, columnspan = 5, padx = c间距, pady = c间距, sticky = "EW")
 		self.w手机标签 = ttk.Label(self.w地址框架, text = "手机：")
-		self.w手机标签.grid(row = 1, rowspan = 1, column = 0, columnspan = 1, padx = 4, pady = 4, sticky = "E")
+		self.w手机标签.grid(row = 1, rowspan = 1, column = 0, columnspan = 1, padx = c间距, pady = c间距, sticky = "E")
 		self.w手机 = ttk.Combobox(self.w地址框架, state = "readonly")
-		self.w手机.grid(row = 1, rowspan = 1, column = 1, columnspan = 5, padx = 4, pady = 4, sticky = "EW")
+		self.w手机.grid(row = 1, rowspan = 1, column = 1, columnspan = 5, padx = c间距, pady = c间距, sticky = "EW")
 		self.w地址管理 = ttk.Button(self.w地址框架, text = "地址管理", command = self.f按钮_地址管理)
-		self.w地址管理.grid(row = 2, rowspan = 1, column = 0, columnspan = 2, padx = 4, pady = 4)
+		self.w地址管理.grid(row = 2, rowspan = 1, column = 0, columnspan = 2, padx = c间距, pady = c间距)
 		self.w修改定位 = ttk.Button(self.w地址框架, text = "修改定位", command = self.f按钮_修改定位)
-		self.w修改定位.grid(row = 2, rowspan = 1, column = 2, columnspan = 2, padx = 4, pady = 4)
+		self.w修改定位.grid(row = 2, rowspan = 1, column = 2, columnspan = 2, padx = c间距, pady = c间距)
 		self.w还原定位 = ttk.Button(self.w地址框架, text = "还原定位", command = self.f按钮_还原定位)
-		self.w还原定位.grid(row = 2, rowspan = 1, column = 4, columnspan = 2, padx = 4, pady = 4)
+		self.w还原定位.grid(row = 2, rowspan = 1, column = 4, columnspan = 2, padx = c间距, pady = c间距)
 		#日志
 		self.w日志框架 = ttk.LabelFrame(self, text = "日志")
-		self.w日志框架.grid(row = 1, column = 0, padx = 4, pady = 4)
+		self.w日志框架.grid(row = 1, column = 0, padx = c间距, pady = c间距)
 		self.w清空日志 = ttk.Button(self.w日志框架, text = "清空日志", command = self.f按钮_清空日志)
-		self.w清空日志.pack(side = "top", padx = 4, pady = 4)
+		self.w清空日志.pack(side = "top", padx = c间距, pady = c间距)
 		self.w日志 = tk.Text(self.w日志框架, height = 20, width = 40)
-		self.w日志.pack(side = "top", fill = "both", padx = 4, pady = 4)
+		self.w日志.pack(side = "top", fill = "both", padx = c间距, pady = c间距)
 		#子窗口
 		self.w子窗口 = None
 		#其他
-		if self.m地址管理.fi有地址():
-			self.w地址.current(0)
-		if self.m手机管理.fi有手机():
-			self.w手机.current(0)
 		self.m日志框处理器 = 日志.g文本框处理器
 		self.bind("<Visibility>", self.f事件_加载)
 		self.bind("<Destroy>", self.f事件_关闭)
@@ -66,6 +60,7 @@ class W主窗口(tk.Tk):
 		if e.widget == self:
 			日志.f调试("窗口加载")
 			self.unbind("<Visibility>")
+			窗口.f窗口居中(self)
 			self.m日志框处理器.f启用(self.w日志)
 			self.m地址管理.f打开文件()
 			self.f刷新地址()
