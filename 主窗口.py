@@ -1,4 +1,5 @@
 import tkinter as tk
+import tkinter.scrolledtext as tkst
 import tkinter.ttk as ttk
 import async_tkinter_loop	#async-tkinter-loop
 import 窗口
@@ -41,7 +42,7 @@ class W主窗口(tk.Tk):
 		self.w日志框架.grid(row = 1, column = 0, padx = c间距, pady = c间距)
 		self.w清空日志 = ttk.Button(self.w日志框架, text = "清空日志", command = self.f按钮_清空日志)
 		self.w清空日志.pack(side = "top", padx = c间距, pady = c间距)
-		self.w日志 = tk.Text(self.w日志框架, height = 20, width = 40)
+		self.w日志 = tkst.ScrolledText(self.w日志框架, height = 20, width = 40)
 		self.w日志.pack(side = "top", fill = "both", padx = c间距, pady = c间距)
 		#子窗口
 		self.w子窗口 = None
@@ -123,7 +124,14 @@ class W主窗口(tk.Tk):
 		v地址数量 = self.m地址管理.fg地址数量()
 		if v地址数量 <= self.m选择地址:	#刷新后的地址数量可能比选择索引小
 			self.m选择地址 = v地址数量 - 1
-		self.w地址.current(self.m选择地址)
+		if self.m选择地址 == -1:
+			if v地址数量 > 0:	#原本没地址没选择,刷新后有地址了,选择第一个
+				self.m选择地址 = 0
+				self.w地址.current(0)
+			else:	#原本有地址有选择,刷新后没地址了,组合框变空白
+				self.w地址.set("")
+		else:	#有选择
+			self.w地址.current(self.m选择地址)
 	def f刷新手机(self):
 		if not self.m手机管理.f刷新手机():
 			return

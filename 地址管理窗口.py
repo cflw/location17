@@ -32,7 +32,9 @@ class W地址管理(tk.Toplevel):
 		self.m选择有效 = False
 		#表格
 		c表格行 = 0
-		self.w地址列表 = ttk.Treeview(self, show = "headings", columns = ("名称", "经度", "纬度", "偏移"), height = 20)
+		self.w地址列表框架 = ttk.Frame(self)
+		self.w地址列表框架.grid(row = c表格行, rowspan = 1, column = 0, columnspan = 6, padx = c间距, pady = c间距)
+		self.w地址列表 = ttk.Treeview(self.w地址列表框架, show = "headings", columns = ("名称", "经度", "纬度", "偏移"), height = 20)
 		self.w地址列表.heading("名称", text = "名称")
 		self.w地址列表.heading("经度", text = "经度")
 		self.w地址列表.heading("纬度", text = "纬度")
@@ -42,7 +44,10 @@ class W地址管理(tk.Toplevel):
 		self.w地址列表.column("纬度", width = int(100 * v系统缩放))
 		self.w地址列表.column("偏移", width = int(80 * v系统缩放))
 		self.w地址列表.bind("<<TreeviewSelect>>", self.f事件_表格选择)
-		self.w地址列表.grid(row = c表格行, rowspan = 1, column = 0, columnspan = 6, padx = c间距, pady = c间距)
+		self.w地址列表.pack(side = "left", fill = "y")
+		self.w地址列表滚动条 = tk.Scrollbar(self.w地址列表框架, orient = "vertical", command = self.w地址列表.yview)
+		self.w地址列表滚动条.pack(side = "right", fill = "y")
+		self.w地址列表.configure(yscrollcommand = self.w地址列表滚动条.set)
 		self.f刷新地址列表()
 		#移动按钮
 		c移动按钮行 = c表格行 + 1
