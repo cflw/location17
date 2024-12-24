@@ -88,7 +88,7 @@ class W主窗口(tk.Tk):
 			return
 		v经度, v纬度 = 坐标.f随机偏移(v地址.m经度, v地址.m纬度, v地址.m偏移)
 		日志.f信息(f"修改定位: 手机={v手机.fg设备名称()}, 经度={v经度}, 纬度={v纬度}")
-		v结果 = await v手机.f修改定位(a经度 = v经度, a纬度 = v纬度)
+		v结果 = await v手机.f持续修改定位(a经度 = v经度, a纬度 = v纬度)
 		if v结果:
 			日志.f信息("修改定位成功")
 		else:
@@ -100,7 +100,7 @@ class W主窗口(tk.Tk):
 			日志.f告警("未选择手机")
 			return
 		日志.f信息(f"还原定位: 手机={v手机.fg设备名称()}")
-		v结果 = await v手机.f还原定位()
+		v结果 = await v手机.f持续还原定位()
 		if v结果:
 			日志.f信息("还原定位成功")
 		else:
@@ -139,7 +139,14 @@ class W主窗口(tk.Tk):
 		v手机数量 = self.m手机管理.fg手机数量()
 		if v手机数量 <= self.m选择手机:	#刷新后的地址数量可能比选择索引小
 			self.m选择手机 = v手机数量 - 1
-		self.w手机.current(self.m选择手机)
+		if self.m选择手机 == -1:
+			if v手机数量 > 0:
+				self.m选择手机 = 0
+				self.w手机.current(0)
+			else:
+				self.w手机.set("")
+		else:
+			self.w手机.current(self.m选择手机)
 	def f事件_地址被选择(self, event):
 		w选择框 = event.widget
 		self.m选择地址 = v选择 = w选择框.current()

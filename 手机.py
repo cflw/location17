@@ -13,6 +13,7 @@ import 日志
 OSUTILS = get_os_utils()
 def f修改定位0(a客户端, a经度: float, a纬度: float):	#通用
 	#代码参考 pymobiledevice3.cli.developer.dvt_simulate_location_set
+	#ios17.x定位恢复时间较短,需要不断修改定位
 	try:
 		with DvtSecureSocketProxyService(a客户端) as dvt:
 			LocationSimulation(dvt).set(latitude = a纬度, longitude = a经度)
@@ -20,7 +21,8 @@ def f修改定位0(a客户端, a经度: float, a纬度: float):	#通用
 	except pymd3ex.PasswordRequiredError as e:
 		日志.f错误("有密码保护,请先解锁手机")
 	except Exception as e:
-		日志.f错误("出现异常", exc_info = e)
+		日志.f错误(f"出现异常: {e.__class__.__name__}: {e}", exc_info = False)	#前端只显示异常名称
+		日志.f调试("异常信息:", exc_info = e)
 	return False
 def f还原定位0(a客户端):
 	#代码参考 pymobiledevice3.cli.developer.dvt_simulate_location_clear
@@ -30,12 +32,14 @@ def f还原定位0(a客户端):
 			LocationSimulation(dvt).clear()
 		return True
 	except Exception as e:
-		日志.f错误("出现异常", exc_info = e)
+		日志.f错误(f"出现异常: {e.__class__.__name__}: {e}", exc_info = False)	#前端只显示异常名称
+		日志.f调试("异常信息:", exc_info = e)
 	return False
 class C手机:
 	def __init__(self, a隧道服务, a序列号, a连接类型):
 		self.m隧道服务 = a隧道服务
 		self.m客户端 = create_using_usbmux(serial = a序列号, connection_type = a连接类型)
+		self.m持续修改定位 = None
 	def fg显示名称(self):	#在主界面手机列表中显示的名称
 		return f"{self.fg设备名称()} ({self.fg系统版本()})"
 	def fg设备名称(self):
@@ -58,6 +62,21 @@ class C手机:
 			async with rsd:
 				return f还原定位0(rsd)
 		return False
+	async def f持续修改定位(self, a经度: float, a纬度: float):
+		if self.m持续修改定位:
+			self.m持续修改定位.f关闭()
+		if rsd := self.fg远程服务():
+			async with rsd:
+				self.m持续修改定位 = C持续修改定位(rsd, a经度, a纬度)
+				return self.m持续修改定位.f启动()
+		return False
+	async def f持续还原定位(self):
+		if self.m持续修改定位:
+			v还原结果 = self.m持续修改定位.f关闭()
+			self.m持续修改定位 = None
+			return v还原结果
+		else:	#没有持续修改定位,则还原一次
+			return await self.f还原定位()
 	def fg远程服务(self):
 		if v地址端口 := self.m隧道服务.fg远程服务地址(self.fg序列号()):
 			日志.f调试(f"连接远程服务: {v地址端口}")
@@ -150,3 +169,29 @@ class C隧道服务:	#隧道服务必须在另外一个线程运行,不然连接
 		for k, v in self.m隧道核心.tunnel_tasks.items():
 			if a序列号 in k:
 				return v.tunnel.address, v.tunnel.port
+class C持续修改定位:	#解决ios17修改定位秒恢复的问题,通过一个无限循环来不断修改定位
+	def __init__(self, a客户端, a经度: float, a纬度: float):
+		self.m关闭标志 = False
+		self.m客户端 = a客户端	#rsd
+		self.m经度 = a经度
+		self.m纬度 = a纬度
+		self.m线程 = threading.Thread(target = asyncio.run, args = (self.f运行(),))
+		self.m还原结果 = None	#线程返回值
+	async def f运行(self):
+		while not self.m关闭标志:
+			if not f修改定位0(self.m客户端, self.m经度, self.m纬度):
+				return False	#出现异常,提前结束
+			await asyncio.sleep(0.1)
+		#正常结束,还原定位
+		self.m还原结果 = f还原定位0(self.m客户端)
+	def f启动(self):
+		v结果 = f修改定位0(self.m客户端, self.m经度, self.m纬度)	#首次修改,根据结果决定是否持续修改
+		if v结果:
+			self.m线程.start()
+		return v结果
+	def f关闭(self):
+		if self.m线程.is_alive():	#可能存在线程异常结束的情况
+			self.m关闭标志 = True
+			self.m线程.join()
+			return self.m还原结果
+		return False
