@@ -2,12 +2,13 @@ import asyncio
 import traceback
 import threading
 import pymobiledevice3.exceptions as pymd3ex
-from pymobiledevice3.usbmux import list_devices	#pymobiledevice3=4.11.3
+from pymobiledevice3.usbmux import list_devices	#pymobiledevice3 >= 4.11.3
 from pymobiledevice3.lockdown import create_using_usbmux
 from pymobiledevice3.osu.os_utils import get_os_utils
 from pymobiledevice3.services.dvt.dvt_secure_socket_proxy import DvtSecureSocketProxyService
 from pymobiledevice3.services.dvt.instruments.location_simulation import LocationSimulation
-from pymobiledevice3.tunneld import TunneldCore
+#from pymobiledevice3.tunneld import TunneldCore	#pymobiledevice3 < 4.18.0
+from pymobiledevice3.tunneld.server import TunneldCore	#pymobiledevice3 >= 4.18.0
 from pymobiledevice3.remote.remote_service_discovery import RemoteServiceDiscoveryService
 import 日志
 OSUTILS = get_os_utils()
