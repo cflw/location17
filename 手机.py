@@ -2,22 +2,22 @@ import asyncio
 import traceback
 import threading
 import pymobiledevice3.exceptions as pymd3ex
-from pymobiledevice3.usbmux import list_devices	#pymobiledevice3 >= 4.11.3
+from pymobiledevice3.usbmux import list_devices	#pymobiledevice3 >= 4.11.3, 需要安装itunes才能用
 from pymobiledevice3.lockdown import create_using_usbmux
 from pymobiledevice3.osu.os_utils import get_os_utils
-from pymobiledevice3.services.dvt.dvt_secure_socket_proxy import DvtSecureSocketProxyService
+# from pymobiledevice3.services.dvt.dvt_secure_socket_proxy import DvtSecureSocketProxyService	#pymobiledevice3 < 9.0.0
+from pymobiledevice3.services.dvt.instruments.dvt_provider import DvtProvider #pymobiledevice3 >= 9.0.0
 from pymobiledevice3.services.dvt.instruments.location_simulation import LocationSimulation
-#from pymobiledevice3.tunneld import TunneldCore	#pymobiledevice3 < 4.18.0
 from pymobiledevice3.tunneld.server import TunneldCore	#pymobiledevice3 >= 4.18.0
 from pymobiledevice3.remote.remote_service_discovery import RemoteServiceDiscoveryService
 import 日志
 OSUTILS = get_os_utils()
-def f修改定位0(a客户端, a经度: float, a纬度: float):	#通用
-	#代码参考 pymobiledevice3.cli.developer.dvt_simulate_location_set
+async def f修改定位0(a客户端, a经度: float, a纬度: float):	#通用
+	#代码参考 https://github.com/doronz88/pymobiledevice3/blob/master/pymobiledevice3/cli/developer/dvt/simulate_location.py
 	#ios17.x定位恢复时间较短,需要不断修改定位
 	try:
-		with DvtSecureSocketProxyService(a客户端) as dvt:
-			LocationSimulation(dvt).set(latitude = a纬度, longitude = a经度)
+		async with DvtProvider(a客户端) as dvt, LocationSimulation(dvt) as ls:
+			await ls.set(latitude = a纬度, longitude = a经度)
 		return True
 	except pymd3ex.PasswordRequiredError as e:
 		日志.f错误("有密码保护,请先解锁手机")
@@ -25,60 +25,60 @@ def f修改定位0(a客户端, a经度: float, a纬度: float):	#通用
 		日志.f错误(f"出现异常: {e.__class__.__name__}: {e}", exc_info = False)	#前端只显示异常名称
 		日志.f调试("异常信息:", exc_info = e)
 	return False
-def f还原定位0(a客户端):
-	#代码参考 pymobiledevice3.cli.developer.dvt_simulate_location_clear
+async def f还原定位0(a客户端):
 	#有延迟,可能没那么快生效
 	try:
-		with DvtSecureSocketProxyService(a客户端) as dvt:
-			LocationSimulation(dvt).clear()
+		async with DvtProvider(a客户端) as dvt, LocationSimulation(dvt) as ls:
+			await ls.clear()
 		return True
 	except Exception as e:
 		日志.f错误(f"出现异常: {e.__class__.__name__}: {e}", exc_info = False)	#前端只显示异常名称
 		日志.f调试("异常信息:", exc_info = e)
 	return False
 class C手机:
-	def __init__(self, a隧道服务, a序列号, a连接类型):
+	def __init__(self, a隧道服务):
 		self.m隧道服务 = a隧道服务
-		self.m客户端 = create_using_usbmux(serial = a序列号, connection_type = a连接类型)
 		self.m持续修改定位 = None
-	def fg显示名称(self):	#在主界面手机列表中显示的名称
+	async def f创建客户端(self, a序列号, a连接类型):
+		self.m客户端 = await create_using_usbmux(serial = a序列号, connection_type = a连接类型)
+	def fg显示名称(self)->str:	#在主界面手机列表中显示的名称
 		return f"{self.fg设备名称()} ({self.fg系统版本()})"
-	def fg设备名称(self):
+	def fg设备名称(self)->str:
 		return self.m客户端.all_values.get("DeviceName")
-	def fg连接类型(self):
+	def fg连接类型(self)->str:
 		return self.m客户端.service.mux_device.connection_type
-	def fg系统版本(self):
+	def fg系统版本(self)->str:
 		return self.m客户端.all_values.get("ProductVersion")
-	def fg序列号(self):
+	def fg序列号(self)->str:
 		return self.m客户端.udid
-	async def f修改定位(self, a经度: float, a纬度: float):
+	async def f修改定位(self, a经度: float, a纬度: float)->bool:
 		#ios 17.0~ 使用远程服务
 		if rsd := self.fg远程服务():
 			async with rsd:
-				return f修改定位0(rsd, a经度, a纬度)
+				return await f修改定位0(rsd, a经度, a纬度)
 		return False
-	async def f还原定位(self):
+	async def f还原定位(self)->bool:
 		#ios 17.0~ 使用远程服务
 		if rsd := self.fg远程服务():
 			async with rsd:
-				return f还原定位0(rsd)
+				return await f还原定位0(rsd)
 		return False
-	async def f持续修改定位(self, a经度: float, a纬度: float):
+	async def f持续修改定位(self, a经度: float, a纬度: float)->bool:
 		if self.m持续修改定位:
 			self.m持续修改定位.f关闭()
 		if rsd := self.fg远程服务():
 			async with rsd:
 				self.m持续修改定位 = C持续修改定位(rsd, a经度, a纬度)
-				return self.m持续修改定位.f启动()
+				return await self.m持续修改定位.f启动()
 		return False
-	async def f持续还原定位(self):
+	async def f持续还原定位(self)->bool:
 		if self.m持续修改定位:
 			v还原结果 = self.m持续修改定位.f关闭()
 			self.m持续修改定位 = None
 			return v还原结果
 		else:	#没有持续修改定位,则还原一次
 			return await self.f还原定位()
-	def fg远程服务(self):
+	def fg远程服务(self)->RemoteServiceDiscoveryService:
 		if v地址端口 := self.m隧道服务.fg远程服务地址(self.fg序列号()):
 			日志.f调试(f"连接远程服务: {v地址端口}")
 			return RemoteServiceDiscoveryService(v地址端口)
@@ -103,8 +103,12 @@ class C手机管理:
 	async def f关闭(self):
 		self.m隧道服务.f关闭()
 		await asyncio.sleep(0)
-	def f刷新手机(self):
-		va设备 = list_devices()
+	async def f创建手机(self, a序列号, a连接类型)->C手机:
+		v手机 = C手机(self.m隧道服务)
+		await v手机.f创建客户端(a序列号, a连接类型)
+		return v手机
+	async def f刷新手机(self)->bool:
+		va设备 = await list_devices()	#pymobiledevice3 >= 9.0.0
 		v这次列出设备数 = len(va设备)
 		if self.m上次列出设备数 == v这次列出设备数:
 			return False	#数量一样,说明没变化
@@ -118,9 +122,9 @@ class C手机管理:
 			else:
 				va待添加.setdefault(v设备.serial, v设备.connection_type)
 		va新手机 = list(filter(lambda a手机: a手机.fg序列号() in va保留, self.ma手机))
-		va新手机 += list(map(lambda a设备: C手机(self.m隧道服务, a设备[0], a设备[1]), va待添加.items()))
+		va新手机 += await asyncio.gather(*(self.f创建手机(v序列号, v连接类型) for v序列号, v连接类型 in va待添加.items()))
 		self.ma手机 = va新手机
-		return True
+		return True	#刷新完毕
 	def fe手机名称(self):
 		for v手机 in self.ma手机:
 			yield v手机.fg显示名称()
@@ -131,8 +135,8 @@ class C手机管理:
 class C隧道服务:	#隧道服务必须在另外一个线程运行,不然连接时阻塞会导致连接超时
 	def __init__(self):
 		self.m隧道核心 = TunneldCore()
-		self.m启动标志 = False
-		self.m关闭标志 = False
+		self.m启动标志 = False	#需要启动时true
+		self.m关闭标志 = False	#需要关闭为true
 		self.m线程 = threading.Thread(target = asyncio.run, args = (self.f运行(),))
 		self.m抛过的异常 = set()	#重复的异常只记录一次日志
 	async def f运行(self):
@@ -180,13 +184,13 @@ class C持续修改定位:	#解决ios17修改定位秒恢复的问题,通过一�
 		self.m还原结果 = None	#线程返回值
 	async def f运行(self):
 		while not self.m关闭标志:
-			if not f修改定位0(self.m客户端, self.m经度, self.m纬度):
+			if not await f修改定位0(self.m客户端, self.m经度, self.m纬度):
 				return False	#出现异常,提前结束
 			await asyncio.sleep(0.1)
 		#正常结束,还原定位
-		self.m还原结果 = f还原定位0(self.m客户端)
-	def f启动(self):
-		v结果 = f修改定位0(self.m客户端, self.m经度, self.m纬度)	#首次修改,根据结果决定是否持续修改
+		self.m还原结果 = await f还原定位0(self.m客户端)
+	async def f启动(self):
+		v结果 = await f修改定位0(self.m客户端, self.m经度, self.m纬度)	#首次修改,根据结果决定是否持续修改
 		if v结果:
 			self.m线程.start()
 		return v结果

@@ -54,8 +54,9 @@ class W主窗口(tk.Tk):
 	def f定时_更新日志(self):
 		self.m日志框处理器.f更新()
 		self.m定时_更新日志 = self.after(10, self.f定时_更新日志)
-	def f定时_更新手机(self):
-		self.f刷新手机()
+	@async_tkinter_loop.async_handler
+	async def f定时_更新手机(self):
+		await self.f刷新手机()
 		self.m定时_更新手机 = self.after(1000, self.f定时_更新手机)
 	def f事件_加载(self, e):
 		if e.widget == self:
@@ -132,8 +133,8 @@ class W主窗口(tk.Tk):
 				self.w地址.set("")
 		else:	#有选择
 			self.w地址.current(self.m选择地址)
-	def f刷新手机(self):
-		if not self.m手机管理.f刷新手机():
+	async def f刷新手机(self):
+		if not await self.m手机管理.f刷新手机():
 			return
 		self.w手机["value"] = list(self.m手机管理.fe手机名称())
 		v手机数量 = self.m手机管理.fg手机数量()
